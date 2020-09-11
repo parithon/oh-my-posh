@@ -97,6 +97,7 @@ function Test-DotNet {
     $path = $PWD.Path
     do {
       if (Test-Path "$path\global.json") {
+        $globalFound = $true
         $version = (Get-Content "$path\global.json" | ConvertFrom-Json).sdk.version
         if ($availablesdks -contains $version) {
           $hasversion = $true
@@ -109,7 +110,7 @@ function Test-DotNet {
     }
     while (($null -eq $hasversion) -and ($path -ne $PWD.Drive.Root))
     $sl.Projects.DotNet = @{
-      HasVersion    = ($hasversion -eq $true)
+      HasVersion    = ($hasversion -eq $true) -or ($null -eq $globalFound)
       Version       = $(if ($version) { $version } else { $availablesdks | Select-Object -Last 1 })
       AvailableSdks = $availablesdks
       ProjectPath   = $PWD.Path
