@@ -14,7 +14,17 @@ function Get-Directory {
 }
 
 function Get-BatteryInfo {
-  
+  $batteryInfo = Get-CimInstance -ClassName Win32_Battery -Property Availability,BatteryStatus,EstimatedChargeRemaining
+  $powerInfo = Get-CimInstance -ClassName batterystatus -Namespace root/WMI -Property Charging,Discharging,PowerOnline
+  $estimatedChargeRemaining = $batteryInfo.EstimatedChargeRemaining | Measure-Object -Sum
+  $estimatedChargeRemaining = $estimatedChargeRemaining.Sum / $estimatedChargeRemaining.Count
+  if ($powerInfo.PowerOnline -eq $true) {
+      $prompt += Write-Prompt -Object $(if ($powerInfo.Charging -eq $true) { $sl.PromptSymbols.Charging } else { $sl.PromptSymbols.Idle }) -ForegroundColor $sl.Colors.PromptSymbolColor
+  }  
+  if ($powerInfo.Discharging -eq $true) {
+      $prompt += Write-Prompt -Object ($sl.PromptSymbols.Discharging) -ForegroundColor $sl.Colors.PromptSymbolColor
+  }
+  $prompt += Write-Prompt -Object ("$estimatedChargeRemaining% ") -ForegroundColor $sl.Colors.PromptSymbolColor
 }
 
 function Test-Git {
@@ -51,7 +61,6 @@ function Test-Git {
           $prompt += Write-Prompt -Object ("$($sl.PromptSymbols.GitCleanSymbol)") -ForegroundColor $sl.Colors.PromptSymbolColor
       }
   }
-  return $prompt
 }
 
 function Test-Node {
@@ -123,22 +132,25 @@ function Write-Theme {
   )
   
   $prompt = Write-Prompt -Object $sl.PromptSymbols.StartSymbol -ForegroundColor $sl.Colors.PromptForegroundColor
-  $prompt += Get-BatteryInfo
   if ($lastCommandFailed) {
       $prompt += Write-Prompt -Object (Get-Directory) -ForegroundColor $sl.Colors.WithForegroundColor
   }
   else {
       $prompt += Write-Prompt -Object (Get-Directory) -ForegroundColor $sl.Colors.DriveForegroundColor
   }
-  $prompt += Test-Git
-  $prompt += Test-Node
-  $prompt += Test-DotNet
+  Test-Git
+  Test-Node
+  Test-DotNet
   if ($with) {
       $prompt += Write-Prompt -Object "$($with.ToUpper()) " -BackgroundColor $sl.Colors.WithBackgroundColor -ForegroundColor $sl.Colors.WithForegroundColor
   }
-  $prompt += Set-Newline
+  $prompt += Write-Prompt -Object ' '
+  if (-not $sl.Options.NoNewLine) {
+    $prompt += Set-Newline
+  }
+  Get-BatteryInfo
   $prompt += Write-Prompt -Object ($sl.PromptSymbols.PromptIndicator) -ForegroundColor  $sl.Colors.PromptSymbolColor
-  $prompt += '  '
+  $prompt += ' '
   $prompt
 }
 
@@ -154,6 +166,9 @@ $sl.PromptSymbols.NPM = [char]::ConvertFromUtf32(0x2b23)                # ⬣
 $sl.PromptSymbols.Node = [char]::ConvertFromUtf32(0x2b22)               # ⬢
 $sl.PromptSymbols.DotNet = [char]::ConvertFromUtf32(0x2B24)             # ⬤
 $sl.PromptSymbols.DotNetMissing = [char]::ConvertFromUtf32(0x00A2)      # ¢
+$sl.PromptSymbols.Charging = [char]::ConvertFromUtf32(0x2191)           # ↑
+$sl.PromptSymbols.Discharging = [char]::ConvertFromUtf32(0x2193)        # ↓
+$sl.PromptSymbols.Idle = [char]::ConvertFromUtf32(0x2219)               # ∙
 $sl.Colors.PromptSymbolColor = [ConsoleColor]::Green
 $sl.Colors.PromptHighlightColor = [ConsoleColor]::Blue
 $sl.Colors.DriveForegroundColor = [ConsoleColor]::Cyan
