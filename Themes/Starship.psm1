@@ -15,16 +15,18 @@ function Get-Directory {
 
 function Get-BatteryInfo {
   $batteryInfo = Get-CimInstance -ClassName Win32_Battery -Property Availability,BatteryStatus,EstimatedChargeRemaining
-  $powerInfo = Get-CimInstance -ClassName batterystatus -Namespace root/WMI -Property Charging,Discharging,PowerOnline
-  $estimatedChargeRemaining = $batteryInfo.EstimatedChargeRemaining | Measure-Object -Sum
-  $estimatedChargeRemaining = $estimatedChargeRemaining.Sum / $estimatedChargeRemaining.Count
-  if ($powerInfo.PowerOnline -eq $true) {
-      $prompt += Write-Prompt -Object $(if ($powerInfo.Charging -eq $true) { $sl.PromptSymbols.Charging } else { $sl.PromptSymbols.Idle }) -ForegroundColor $sl.Colors.PromptSymbolColor
-  }  
-  if ($powerInfo.Discharging -eq $true) {
-      $prompt += Write-Prompt -Object ($sl.PromptSymbols.Discharging) -ForegroundColor $sl.Colors.PromptSymbolColor
+  if ($batteryInfo.Availability) {
+    $powerInfo = Get-CimInstance -ClassName batterystatus -Namespace root/WMI -Property Charging,Discharging,PowerOnline
+    $estimatedChargeRemaining = $batteryInfo.EstimatedChargeRemaining | Measure-Object -Sum
+    $estimatedChargeRemaining = $estimatedChargeRemaining.Sum / $estimatedChargeRemaining.Count
+    if ($powerInfo.PowerOnline -eq $true) {
+        $prompt += Write-Prompt -Object $(if ($powerInfo.Charging -eq $true) { $sl.PromptSymbols.Charging } else { $sl.PromptSymbols.Idle }) -ForegroundColor $sl.Colors.PromptSymbolColor
+    }  
+    if ($powerInfo.Discharging -eq $true) {
+        $prompt += Write-Prompt -Object ($sl.PromptSymbols.Discharging) -ForegroundColor $sl.Colors.PromptSymbolColor
+    }
+    $prompt += Write-Prompt -Object ("$estimatedChargeRemaining% ") -ForegroundColor $sl.Colors.PromptSymbolColor
   }
-  $prompt += Write-Prompt -Object ("$estimatedChargeRemaining% ") -ForegroundColor $sl.Colors.PromptSymbolColor
 }
 
 function Test-Git {
@@ -145,7 +147,7 @@ function Write-Theme {
       $prompt += Write-Prompt -Object "$($with.ToUpper()) " -BackgroundColor $sl.Colors.WithBackgroundColor -ForegroundColor $sl.Colors.WithForegroundColor
   }
   $prompt += Write-Prompt -Object ' '
-  if (-not $sl.Options.NoNewLine) {
+  if ($sl.Options.NewLine) {
     $prompt += Set-Newline
   }
   Get-BatteryInfo
