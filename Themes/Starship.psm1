@@ -73,6 +73,9 @@ function Test-Git {
 }
 
 function Test-Node {
+  if (-not (Get-Command node.exe)) {
+    return
+  }
   if (Test-Path "package.json") {
     $sl.Projects.Node = @{
       Version        = (node.exe -v 2>$null)
@@ -92,6 +95,9 @@ function Test-Node {
 }
 
 function Test-DotNet {
+  if (-not (Get-Command dotnet.exe)) {
+    return
+  }
   if ((Test-Path "*.sln", "*.*proj") -eq $true) {
     $availablesdks = (dotnet.exe --list-sdks | Select-String -Pattern "\d+\.\d+\.\d+").Matches.Value
     $path = $PWD.Path
