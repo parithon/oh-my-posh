@@ -73,12 +73,9 @@ function Test-Git {
 }
 
 function Test-Node {
-  if (-not (Get-Command node.exe)) {
-    return
-  }
   if (Test-Path "package.json") {
     $sl.Projects.Node = @{
-      Version        = (node.exe -v 2>$null)
+      Version        = $(if (Get-Command node.exe -ErrorAction Ignore) { (node.exe -v 2>$null) } else { $null })
       ProjectPath    = $PWD.Path
       ProjectVersion = (Get-Content "package.json" | ConvertFrom-Json | Select-Object -ExpandProperty Version)
     }
@@ -87,7 +84,12 @@ function Test-Node {
     $prompt += Write-Prompt -Object (" is ")
     $prompt += Write-Prompt -Object ($sl.PromptSymbols.NPM + " v" + $sl.Projects.Node.ProjectVersion) -ForegroundColor $sl.Colors.GitDefaultColor
     $prompt += Write-Prompt -Object (" via ")
-    $prompt += Write-Prompt -Object ($sl.PromptSymbols.Node + " " + $sl.Projects.Node.Version) -ForegroundColor $sl.Colors.PromptSymbolColor
+    if (-not $sl.Projects.Node.Version) {
+      $prompt += Write-Prompt -Object ($sl.PromptSymbols.Node + " not installed") -ForegroundColor $sl.Colors.WithForegroundColor
+    }
+    else {
+      $prompt += Write-Prompt -Object ($sl.PromptSymbols.Node + " " + $sl.Projects.Node.Version) -ForegroundColor $sl.Colors.PromptSymbolColor
+    }
   }
   else {
     $sl.Projects.Remove("Node")
@@ -95,7 +97,7 @@ function Test-Node {
 }
 
 function Test-DotNet {
-  if (-not (Get-Command dotnet.exe)) {
+  if (-not (Get-Command dotnet.exe -ErrorAction Ignore)) {
     return
   }
   if ((Test-Path "*.sln", "*.*proj") -eq $true) {
