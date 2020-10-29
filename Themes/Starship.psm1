@@ -14,19 +14,22 @@ function Get-Directory {
 }
 
 function Get-BatteryInfo {
-  $batteryInfo = Get-CimInstance -ClassName Win32_Battery -Property Availability, BatteryStatus, EstimatedChargeRemaining
-  if ($batteryInfo.Availability) {
-    $powerInfo = Get-CimInstance -ClassName batterystatus -Namespace root/WMI -Property Charging, Discharging, PowerOnline
-    $estimatedChargeRemaining = $batteryInfo.EstimatedChargeRemaining | Measure-Object -Sum
-    $estimatedChargeRemaining = $estimatedChargeRemaining.Sum / $estimatedChargeRemaining.Count
-    if ($powerInfo.PowerOnline -eq $true) {
-      $prompt += Write-Prompt -Object $(if ($powerInfo.Charging -eq $true) { $sl.PromptSymbols.Charging } else { $sl.PromptSymbols.Idle }) -ForegroundColor $sl.Colors.PromptSymbolColor
-    }  
-    if ($powerInfo.Discharging -eq $true) {
-      $prompt += Write-Prompt -Object ($sl.PromptSymbols.Discharging) -ForegroundColor $sl.Colors.PromptSymbolColor
+  if ($IsWindows) {
+    $batteryInfo = Get-CimInstance -ClassName Win32_Battery -Property Availability, BatteryStatus, EstimatedChargeRemaining
+    if ($batteryInfo.Availability) {
+      $powerInfo = Get-CimInstance -ClassName batterystatus -Namespace root/WMI -Property Charging, Discharging, PowerOnline
+      $estimatedChargeRemaining = $batteryInfo.EstimatedChargeRemaining | Measure-Object -Sum
+      $estimatedChargeRemaining = $estimatedChargeRemaining.Sum / $estimatedChargeRemaining.Count
+      if ($powerInfo.PowerOnline -eq $true) {
+        $prompt += Write-Prompt -Object $(if ($powerInfo.Charging -eq $true) { $sl.PromptSymbols.Charging } else { $sl.PromptSymbols.Idle }) -ForegroundColor $sl.Colors.PromptSymbolColor
+      }  
+      if ($powerInfo.Discharging -eq $true) {
+        $prompt += Write-Prompt -Object ($sl.PromptSymbols.Discharging) -ForegroundColor $sl.Colors.PromptSymbolColor
+      }
+      $prompt += Write-Prompt -Object ("$estimatedChargeRemaining% ") -ForegroundColor $sl.Colors.PromptSymbolColor
     }
-    $prompt += Write-Prompt -Object ("$estimatedChargeRemaining% ") -ForegroundColor $sl.Colors.PromptSymbolColor
   }
+  # TODO: Learn how to get battery info for Linux and Windows
 }
 
 function Test-Git {
